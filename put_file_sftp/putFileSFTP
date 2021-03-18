@@ -1,0 +1,145 @@
+#!/bin/sh
+
+###############################################################################
+#                                DESCRIPCION                                  #
+###############################################################################
+# Creacion de SHELL para subir archivos a un servidor FTP/SFTP   	      #
+#                                                                             #
+# Parametros                                                                  #
+#   SERVERNAME     : Nombre del servidor                                      #
+#   FILE           : Nombre del archivo a extraer                             #
+#   LOCAL_DIR      : Directorio local donde se deja el archivo                #
+#   FTP_DIR        : Ruta remota donde se extrae el archivo                   #
+#                                                                             #
+###############################################################################
+#                                MODIFCACION(ES)                              #
+###############################################################################
+#   FECHA(yyyy-MM-dd)   |     AUTOR           | DESCRIPCION                   #
+#     2021-02-10        |  Juan David Espitia | Emision Inicial               #
+###############################################################################
+
+#####################################
+# INICO PARAMETROS DE CONFIGURACION #
+#####################################
+#BACKGROUND COLOR
+RED_BC="\e[41m"
+DEFAULT_BC="\e[49m"
+
+BG_BLACK="\e[40m"
+BG_RED="\e[41m"
+BG_GREEN="\e[42m"
+BG_YELLOW="\e[43m"
+BG_BLUE="\e[44m"
+BG_PURPLE="\e[45m"
+BG_CYAN="\e[46m"
+BG_WHITE="\e[47m"
+
+#TEXT COLOR
+TC_BLACK="\e[30m"
+TC_RED="\e[31m"
+TC_GREEN="\e[32m"
+TC_YELLOW="\e[33m"
+TC_BLUE="\e[34m"
+TC_PURPLE="\e[35m"
+TC_CYAN="\e[36m"
+TC_WHITE="\e[37m"
+
+#FORMATO
+TX_BOLD="\e[1m"
+TX_DEFAULT="\e[0m"
+TX_UNDERLINE="\e[4m"
+
+#RESET
+RESET="\e[0m"
+
+#####################################
+# FIN   PARAMETROS DE CONFIGURACION #
+#####################################
+
+SERVERNAME=$1
+if [ -z "$SERVERNAME" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} SERVERNAME ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   
+   exit -1
+fi
+
+FTP_DIR=$2
+if [ -z "$FTP_DIR" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} FTP_DIR ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   
+   exit -1
+fi
+
+LOCAL_DIR=$3
+if [ -z "$LOCAL_DIR" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} LOCAL_DIR ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   
+   exit -1
+fi
+
+FILE=$4
+if [ -z "$FILE" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} FILE ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   
+   exit -1
+fi
+
+if [ $SERVERNAME == '[Name server]' ]; 
+then 
+   HOST='[IP]'
+   USER='[User connection]'
+   PASSWD='[Password]'
+   TYPE='FTP'
+fi
+
+if [ $SERVERNAME == '[Name server otro]' ]; 
+then 
+   HOST='[IP]'
+   USER='[User connection]'
+   PASSWD='[Password]'
+   TYPE='SFTP'
+fi
+
+
+if [ $TYPE == 'FTP' ];
+then
+   
+   ftp -v -d -n -in $HOST <<END_SCRIPT
+   debug
+   
+   quote USER $USER
+   quote PASS $PASSWD
+   
+   cd $FTP_DIR
+   lcd $LOCAL_DIR
+
+   mput $FILE
+
+   quit
+END_SCRIPT
+   
+fi
+
+if [ $TYPE == 'SFTP' ];
+then
+   
+   sftp $USER@$HOST <<EOT
+   
+   cd $FTP_DIR
+   lcd $LOCAL_DIR
+   put $FILE
+   quit
+   
+EOT
+   
+fi
+
+exit 0
