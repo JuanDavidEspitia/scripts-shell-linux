@@ -1,0 +1,5 @@
+6f89655ddb1fd1b4361e1c51be47b5d7  /home/hadoop/Documentos/code/scripts-shell/input/appFail/app1/archivo1.txt
+21613c6d59e63eae4bec0adc6ab84207  /home/hadoop/Documentos/code/scripts-shell/input/appFail/app1/archivo2.txt
+71aa3d49a3aef5705bb71eeb91e93bb9  /home/hadoop/Documentos/code/scripts-shell/input/appFail/app1/archivo3.txt
+03335cc6868052e641d56ac8434385e2  /home/hadoop/Documentos/code/scripts-shell/input/appFail/app2/archivo5.txt
+b7268ca50da0e3ce75187380dd186ddc  /home/hadoop/Documentos/code/scripts-shell/input/appFail/app2/archivo4.txt
