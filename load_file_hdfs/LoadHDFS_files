@@ -1,0 +1,276 @@
+#!/bin/sh
+
+###############################################################################
+#                                DESCRIPCION                                  #
+###############################################################################
+# Creacion de SHELL para subir archivos desde Sistema operativo hacia HDFS    #
+#                                                                             #
+# Parametros                                                                  #
+#   FileName       : Debe ir el nombre del archivo a subir                    #
+#   ruta_local     : Ruta donde se encuentra el archivo a subir               #
+#   ruta_hdfs      : Ruta de HDFS donde se va publicar el archivo             #
+#   ruta_processed : Ruta donde se almacenan los archivos procesados          #
+#   fileLog        : Nombre de archivo de Log                                 #
+###############################################################################
+#                                MODIFCACION(ES)                              #
+###############################################################################
+#   FECHA(yyyy-MM-dd)   |     AUTOR           | DESCRIPCION                   #
+# ----------------------+---------------------+-------------------------------#
+#     2019-09-20        |  Juan David Espitia | Emision Inicial               #
+# ----------------------+---------------------+-------------------------------#
+#     2019-11-30        |  Juan David Espitia | Conversion de UTF-8 a ANSI    #
+###############################################################################
+
+#####################################
+# INICO PARAMETROS DE CONFIGURACION #
+#####################################
+#BACKGROUND COLOR
+RED_BC="\e[41m"
+DEFAULT_BC="\e[49m"
+
+BG_BLACK="\e[40m"
+BG_RED="\e[41m"
+BG_GREEN="\e[42m"
+BG_YELLOW="\e[43m"
+BG_BLUE="\e[44m"
+BG_PURPLE="\e[45m"
+BG_CYAN="\e[46m"
+BG_WHITE="\e[47m"
+
+#TEXT COLOR
+TC_BLACK="\e[30m"
+TC_RED="\e[31m"
+TC_GREEN="\e[32m"
+TC_YELLOW="\e[33m"
+TC_BLUE="\e[34m"
+TC_PURPLE="\e[35m"
+TC_CYAN="\e[36m"
+TC_WHITE="\e[37m"
+
+#FORMATO
+TX_BOLD="\e[1m"
+TX_DEFAULT="\e[0m"
+TX_UNDERLINE="\e[4m"
+
+#RESET
+RESET="\e[0m"
+
+#####################################
+# FIN   PARAMETROS DE CONFIGURACION #
+#####################################
+
+#######################
+# INICIO - Genera Log #
+#######################
+ruta_log=/hadoop/bdstore/code/shell/log
+
+mkdir -p $ruta_log
+
+generateLog () {
+   fechaRegistroLog=`(date "+%Y-%m-%d %H:%M:%S")`
+   echo "$fechaRegistroLog : $1 " >> $ruta_log/$fileLog.log
+}
+
+#######################
+# FIN    - Genera Log #
+#######################
+
+FileName=$1
+if [ -z "$FileName" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} FileName ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+ruta_local=$2
+if [ -z "$ruta_local" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} ruta_local ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+ruta_hdfs=$3
+if [ -z "$ruta_hdfs" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} ruta_hdfs ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+ruta_processed=$4
+if [ -z "$ruta_processed" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} ruta_processed ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+ruta_processed=$4
+if [ -z "$ruta_processed" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} ruta_processed ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+fileLog=$5
+if [ -z "$fileLog" ]; then
+   OUTPUT="${RED_BC} ERROR: FALTA ENVIAR PARAMETRO ${TX_UNDERLINE} fileLog ${TX_DEFAULT}${RED_BC}. Bug? Line number: "
+   OUTPUT+="${BASH_LINENO[${#BASH_LINENO[@]}-2]}${DEFAULT_BC}"
+   echo -e "${OUTPUT}"
+   exit -1
+fi
+
+rm -r $ruta_log/$fileLog.log
+
+
+
+generateLog " ...INICIO... "
+generateLog "   Nombre de archivo: $FileName       "
+generateLog "   Ruta Local       : $ruta_local     "
+generateLog "   Ruta HDFS        : $ruta_hdfs      "
+generateLog "   Ruta Procesados  : $ruta_processed "
+generateLog "   Nombre Log       : $fileLog.log    "
+generateLog "   Ruta Log         : $ruta_log       "
+
+yesterday=`(date "+%Y%m%d" --date='-1 day')`
+
+
+
+###############################
+# VERIFICAR SI ARCHIVO EXISTE #
+###############################
+
+generateLog "."
+
+if [ -f $ruta_local/$FileName ];
+then
+   #echo "Si, si existe archivo $FileName"
+   generateLog "    Si existe archivo $ruta_local/$FileName... procesando"
+else
+   #echo "    No, no existe archivo $FileName ... FIN"
+   generateLog "    No existe archivo $FileName en $ruta_local"
+   generateLog ""
+   if [ $fileLog == "averias" ];
+   then
+      FileName='Bitacora_Tickets_*_'$yesterday'.txt'
+      generateLog "   Nombre de archivo: $FileName       "
+   fi
+   
+   if [ $fileLog == "bandejasCerrados" ];
+   then
+      FileName='Cerrados_al_dia_anterior_*_'$yesterday'*.txt'
+      generateLog "   Nombre de archivo: $FileName       "
+   fi
+   
+   if [ $fileLog == "bandejasPendientes" ];
+   then
+      FileName='Pendientes_al_dia_*_'$yesterday'.txt'
+      generateLog "   Nombre de archivo: $FileName       "
+   fi
+   
+fi
+
+generateLog ""
+
+for n in $(find $ruta_local/$FileName  -printf "%f\n"); 
+do 
+#ls -1t $ruta_local/$FileName | heap -1
+#echo
+#$n=$(ls -1t $ruta_local/$FileName | heap -1)
+#echo 
+#echo 'aa' $ruta_local/$FileName
+#echo
+#echo 'a----------> ' $n
+#echo
+#printf '%s\n' "$n"; 
+generateLog "   Ini -> Comprobar si existe archivo en la ruta Local"
+   if [ -f $ruta_local/$n ];
+   then
+      #echo "Si, si existe archivo $n"
+      generateLog "    Si existe archivo $n... procesando"
+   else
+      #echo "    No, no existe archivo $n ... FIN"
+      generateLog "    No existe archivo $n en $ruta_local"
+      generateLog ""
+      generateLog " ... FIN ... "
+      exit 0
+   fi
+
+generateLog "   Fin -> Comprobar si existe archivo en la ruta Local"
+
+###################################
+# CONVERTIR ARCHIVO UTF-8 TO ANSI #
+###################################
+
+tempFile=$n"_conv"
+
+#echo
+cp $ruta_local/$n $ruta_local/$tempFile
+#echo $tempFile
+
+
+
+encodingFile=$(file -b --mime-encoding $ruta_local/$tempFile)
+#echo 'AQUI --->   ' $encodingFile
+
+if [ $encodingFile == 'utf-8' ]; 
+then 
+   
+   #echo
+   generateLog "CONVERTIR ARCHIVO A ANSI"
+   iconv -f "UTF-8" -t "windows-1252"//TRANSLIT $ruta_local/$tempFile -o $ruta_local/$n
+   
+   
+fi
+
+#echo
+#echo 'antes'
+#ls -l $ruta_local/
+#echo
+rm $ruta_local/$tempFile
+#echo
+#echo 'despues'
+#ls -l $ruta_local/
+#echo
+
+########################
+# SUBIR ARCHIVO A HDFS #
+########################
+generateLog ""
+generateLog "   Ini -> Comprobar si existe archivo en HDFS"
+hdfs dfs -test -e $ruta_hdfs/$n
+existe=($?)
+if [ "$existe" == "1" ]; then
+   generateLog "    Archivo no existe en HDFS: $ruta_hdfs/$n"
+   generateLog "    Subiendo archivo al HDFS: $ruta_hdfs/$n"
+   #echo "    Archivo no existe en HDFS: $ruta_hdfs/$n"
+   hdfs dfs -put -f $ruta_local/$n $ruta_hdfs/
+else
+   generateLog "    Archivo existente en HDFS: $ruta_hdfs/$n"
+   generateLog "    Sobreescritura de archivo en HDFS: $ruta_hdfs/$n"
+   #echo "    Archivo existente en HDFS: $ruta_hdfs/$n"
+   hdfs dfs -put -f $ruta_local/$n $ruta_hdfs/
+fi
+generateLog "   Fin -> Comprobar si existe archivo en HDFS"
+generateLog ""
+
+############################
+# COPIAR ARCHIVO PROCESADO #
+############################
+generateLog "   Copiar archivo procesado en $ruta_processed"
+hdfs dfs -cp -f $ruta_hdfs/$n $ruta_processed
+
+
+########################################
+# ELIMINA ARCHIVO DE SISTEMA OPERATIVO #
+########################################
+#rm -f  $ruta_local/$FileName
+
+done
+generateLog ""
+generateLog " ... FIN ... "
+
+exit 0
